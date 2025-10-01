@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js 학습 프로젝트 - 클라이언트 예제</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .post-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .post-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .post-card p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .chat-container {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f9f9f9;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.own {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.other {
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+        .message-info {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Node.js 학습 프로젝트</h1>
+            <p>Express.js, MongoDB, JWT, Socket.io를 활용한 종합 학습 예제</p>
+        </div>
+
+        <div class="content">
+            <!-- 인증 섹션 -->
+            <div class="section">
+                <h2>🔐 인증 (Authentication)</h2>
+                
+                <div class="form-group">
+                    <label>이메일:</label>
+                    <input type="email" id="email" placeholder="test@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>사용자명:</label>
+                    <input type="text" id="username" placeholder="testuser">
+                </div>
+                
+                <div class="form-group">
+                    <label>비밀번호:</label>
+                    <input type="password" id="password" placeholder="password123">
+                </div>
+
+                <button class="btn" onclick="register()">회원가입</button>
+                <button class="btn btn-secondary" onclick="login()">로그인</button>
+                <button class="btn btn-success" onclick="getMe()">내 정보</button>
+                <button class="btn btn-danger" onclick="logout()">로그아웃</button>
+
+                <div id="authResponse" class="response hidden"></div>
+            </div>
+
+            <!-- 게시물 섹션 -->
+            <div class="section">
+                <h2>📝 게시물 관리</h2>
+                
+                <div class="form-group">
+                    <label>제목:</label>
+                    <input type="text" id="postTitle" placeholder="게시물 제목">
+                </div>
+                
+                <div class="form-group">
+                    <label>내용:</label>
+                    <textarea id="postContent" rows="4" placeholder="게시물 내용"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>카테고리:</label>
+                    <select id="postCategory">
+                        <option value="general">일반</option>
+                        <option value="tech">기술</option>
+                        <option value="lifestyle">라이프스타일</option>
+                        <option value="travel">여행</option>
+                        <option value="food">음식</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="createPost()">게시물 작성</button>
+                <button class="btn btn-secondary" onclick="getPosts()">게시물 목록</button>
+
+                <div id="postsResponse" class="response hidden"></div>
+                <div id="postsGrid" class="posts-grid"></div>
+            </div>
+
+            <!-- 파일 업로드 섹션 -->
+            <div class="section">
+                <h2>📁 파일 업로드</h2>
+                
+                <div class="form-group">
+                    <label>이미지 파일:</label>
+                    <input type="file" id="imageFile" accept="image/*">
+                </div>
+
+                <button class="btn" onclick="uploadFile()">파일 업로드</button>
+                <button class="btn btn-secondary" onclick="getFiles()">파일 목록</button>
+
+                <div id="uploadResponse" class="response hidden"></div>
+            </div>
+
+            <!-- 실시간 채팅 섹션 -->
+            <div class="section">
+                <h2>💬 실시간 채팅 (Socket.io)</h2>
+                
+                <div id="socketStatus" class="status disconnected">
+                    연결되지 않음
+                </div>
+
+                <div class="form-group">
+                    <label>방 ID:</label>
+                    <input type="text" id="roomId" placeholder="room123" value="general">
+                </div>
+
+                <button class="btn" onclick="connectSocket()">연결</button>
+                <button class="btn btn-secondary" onclick="joinRoom()">방 참여</button>
+                <button class="btn btn-danger" onclick="disconnectSocket()">연결 해제</button>
+
+                <div class="chat-container" id="chatContainer"></div>
+                
+                <div class="form-group">
+                    <label>메시지:</label>
+                    <input type="text" id="messageInput" placeholder="메시지를 입력하세요" onkeypress="handleKeyPress(event)">
+                </div>
+
+                <button class="btn" onclick="sendMessage()">메시지 전송</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let socket = null;
+
+        // API 호출 헬퍼 함수
+        async function apiCall(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                }
+            };
+
+            const response = await fetch(url, { ...defaultOptions, ...options });
+            const data = await response.json();
+            
+            return { response, data };
+        }
+
+        // 회원가입
+        async function register() {
+            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const { response, data } = await apiCall('/api/auth/register', {
+                method: 'POST',
+                body: JSON.stringify({ email, username, password })
+            });
+
+            showResponse('authResponse', data, response.ok);
+            
+            if (response.ok) {
+                authToken = data.token;
+                localStorage.setItem('authToken', authToken);
+            }
+        }
+
+        // 로그인
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const { response, data } = await apiCall('/api/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+
+            showResponse('authResponse', data, response.ok);
+            
+            if (response.ok) {
+                authToken = data.token;
+                localStorage.setItem('authToken', authToken);
+            }
+        }
+
+        // 내 정보 조회
+        async function getMe() {
+            const { response, data } = await apiCall('/api/auth/me');
+            showResponse('authResponse', data, response.ok);
+        }
+
+        // 로그아웃
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            showResponse('authResponse', { message: '로그아웃되었습니다.' }, true);
+        }
+
+        // 게시물 작성
+        async function createPost() {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.getElementById('postCategory').value;
+
+            const { response, data } = await apiCall('/api/posts', {
+                method: 'POST',
+                body: JSON.stringify({ title, content, category })
+            });
+
+            showResponse('postsResponse', data, response.ok);
+            
+            if (response.ok) {
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+            }
+        }
+
+        // 게시물 목록 조회
+        async function getPosts() {
+            const { response, data } = await apiCall('/api/posts');
+            showResponse('postsResponse', data, response.ok);
+            
+            if (response.ok) {
+                displayPosts(data.posts);
+            }
+        }
+
+        // 게시물 표시
+        function displayPosts(posts) {
+            const container = document.getElementById('postsGrid');
+            container.innerHTML = '';
+
+            posts.forEach(post => {
+                const postCard = document.createElement('div');
+                postCard.className = 'post-card';
+                postCard.innerHTML = `
+                    <div class="post-meta">${post.category} • ${new Date(post.createdAt).toLocaleDateString()}</div>
+                    <h3>${post.title}</h3>
+                    <p>${post.content.substring(0, 100)}...</p>
+                    <div class="post-meta">작성자: ${post.author.username} • 조회수: ${post.viewCount}</div>
+                `;
+                container.appendChild(postCard);
+            });
+        }
+
+        // 파일 업로드
+        async function uploadFile() {
+            const fileInput = document.getElementById('imageFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResponse('uploadResponse', { error: '파일을 선택해주세요.' }, false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const { response, data } = await apiCall('/api/upload/single', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: formData
+            });
+
+            showResponse('uploadResponse', data, response.ok);
+        }
+
+        // 파일 목록 조회
+        async function getFiles() {
+            const { response, data } = await apiCall('/api/upload/list');
+            showResponse('uploadResponse', data, response.ok);
+        }
+
+        // Socket.io 연결
+        function connectSocket() {
+            if (!authToken) {
+                alert('먼저 로그인해주세요.');
+                return;
+            }
+
+            socket = io('http://localhost:3000', {
+                auth: {
+                    token: authToken
+                }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('socketStatus').textContent = '연결됨';
+                document.getElementById('socketStatus').className = 'status connected';
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('socketStatus').textContent = '연결 해제됨';
+                document.getElementById('socketStatus').className = 'status disconnected';
+            });
+
+            socket.on('new_message', (data) => {
+                addMessageToChat(data);
+            });
+
+            socket.on('user_joined', (data) => {
+                addSystemMessage(`${data.username}님이 참여했습니다.`);
+            });
+
+            socket.on('user_left', (data) => {
+                addSystemMessage(`${data.username}님이 나갔습니다.`);
+            });
+        }
+
+        // 방 참여
+        function joinRoom() {
+            if (!socket) {
+                alert('먼저 연결해주세요.');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId').value;
+            socket.emit('join_room', roomId);
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            if (!socket) {
+                alert('먼저 연결해주세요.');
+                return;
+            }
+
+            const message = document.getElementById('messageInput').value;
+            const roomId = document.getElementById('roomId').value;
+
+            if (!message.trim()) return;
+
+            socket.emit('send_message', {
+                roomId: roomId,
+                message: message,
+                type: 'text'
+            });
+
+            document.getElementById('messageInput').value = '';
+        }
+
+        // 키보드 이벤트 처리
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 채팅에 메시지 추가
+        function addMessageToChat(data) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message other';
+            messageDiv.innerHTML = `
+                <div class="message-info">${data.username} • ${new Date(data.timestamp).toLocaleTimeString()}</div>
+                <div>${data.message}</div>
+            `;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 시스템 메시지 추가
+        function addSystemMessage(message) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.style.background = '#e9ecef';
+            messageDiv.style.textAlign = 'center';
+            messageDiv.style.fontStyle = 'italic';
+            messageDiv.textContent = message;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 연결 해제
+        function disconnectSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        // 응답 표시
+        function showResponse(elementId, data, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `response ${isSuccess ? 'success' : 'error'}`;
+            element.classList.remove('hidden');
+        }
+
+        // 페이지 로드 시 토큰 확인
+        window.onload = function() {
+            if (authToken) {
+                getMe();
+            }
+        };
+    </script>
+</body>
+</html>
+

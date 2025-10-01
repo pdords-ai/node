@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tetris</title>
+<style>
+  :root{--bg:#0f1226;--panel:#1a1f3a;--grid:#22284b;--accent:#6cf;--text:#e6ecff;--muted:#9fb0ff;--danger:#ff6b6b}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -100px,#1b2042 0%,#0f1226 60%,#090b18 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Noto Sans KR,Apple SD Gothic Neo,Arial,sans-serif;display:flex;align-items:center;justify-content:center}
+  .wrap{display:grid;grid-template-columns:minmax(300px,360px) 200px;gap:16px;align-items:start}
+  .panel{background:linear-gradient(180deg,#1a1f3a 0%,#12162b 100%);border:1px solid #2a3160;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+  .board{position:relative;width:300px;height:600px;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(20,1fr);gap:1px;background:var(--grid);padding:1px}
+  .cell{background:#0b0f23}
+  .cell.filled{background:#2b2f57}
+  canvas.hud{position:absolute;inset:0;pointer-events:none}
+  .side{padding:14px 14px}
+  .hstack{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  h1{margin:0 0 8px 0;font-size:18px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
+  .stat{display:grid;grid-template-columns:1fr auto;gap:6px 10px;margin:10px 0}
+  .value{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}
+  .next{display:grid;grid-template-columns:repeat(4,24px);grid-template-rows:repeat(4,24px);gap:2px;margin-top:8px}
+  .ncell{width:24px;height:24px;background:#0b0f23;border-radius:4px}
+  .ncell.on{background:#345;}
+  .controls{margin-top:10px;font-size:12px;color:#b8c1ff;line-height:1.6}
+  .btns{display:flex;gap:8px;margin-top:10px}
+  button{background:#253064;color:var(--text);border:1px solid #34408a;border-radius:8px;padding:8px 12px;cursor:pointer}
+  button:hover{filter:brightness(1.15)}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#1e274f;border:1px solid #31407a;color:#cfe1ff;padding:8px 12px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .25s}
+  .toast.show{opacity:1}
+  @media (max-width: 620px){.wrap{grid-template-columns:1fr}.board{width:270px;height:540px;margin:0 auto}.side{display:grid;grid-template-columns:1fr 1fr;gap:12px}.controls{grid-column:1/3}}
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+  const { useEffect, useMemo, useRef, useState, useCallback } = React;
+
+  const COLS = 10, ROWS = 20;
+  const SHAPES = {
+    I:[[1,1,1,1]],
+    O:[[1,1],[1,1]],
+    T:[[0,1,0],[1,1,1]],
+    S:[[0,1,1],[1,1,0]],
+    Z:[[1,1,0],[0,1,1]],
+    J:[[1,0,0],[1,1,1]],
+    L:[[0,0,1],[1,1,1]]
+  };
+  const COLORS = {I:'#5bd5ff',O:'#ffd166',T:'#a78bfa',S:'#6ee7b7',Z:'#fca5a5',J:'#93c5fd',L:'#fbbf24'};
+
+  function rotateMatrix(shape){
+    const R = shape.length, C = shape[0].length;
+    const res = Array.from({length:C}, ()=>Array(R).fill(0));
+    for(let r=0;r<R;r++) for(let c=0;c<C;c++) res[c][R-1-r] = shape[r][c];
+    return res;
+  }
+
+  function randomPiece(){
+    const keys = Object.keys(SHAPES);
+    const k = keys[(Math.random()*keys.length)|0];
+    return { type:k, shape:SHAPES[k].map(row=>row.slice()), row:0, col:3 };
+  }
+
+  function useToast(){
+    const [msg,setMsg] = useState("");
+    const [show,setShow] = useState(false);
+    const timerRef = useRef(null);
+    const toast = useCallback((text)=>{
+      setMsg(text);
+      setShow(true);
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(()=>setShow(false),1200);
+    },[]);
+    useEffect(()=>()=>clearTimeout(timerRef.current),[]);
+    return { msg, show, toast };
+  }
+
+  function App(){
+    const hudRef = useRef(null);
+    const [grid,setGrid] = useState(()=>Array.from({length:ROWS},()=>Array(COLS).fill(0)));
+    const [active,setActive] = useState(null);
+    const [next,setNext] = useState(()=>randomPiece());
+    const [score,setScore] = useState(0);
+    const [level,setLevel] = useState(1);
+    const [lines,setLines] = useState(0);
+    const [running,setRunning] = useState(false);
+    const [paused,setPaused] = useState(false);
+    const lastRef = useRef(0);
+    const dropInterval = 800;
+    const { msg, show, toast } = useToast();
+
+    const mergedGrid = useMemo(()=>{
+      const clone = grid.map(r=>r.slice());
+      if(active){
+        const {shape,row,col,type} = active;
+        for(let r=0;r<shape.length;r++){
+          for(let c=0;c<shape[0].length;c++){
+            if(shape[r][c]){
+              const rr = row + r, cc = col + c;
+              if(rr>=0 && rr<ROWS && cc>=0 && cc<COLS) clone[rr][cc] = type;
+            }
+          }
+        }
+      }
+      return clone;
+    },[grid,active]);
+
+    const collide = useCallback((shape,row,col)=>{
+      for(let r=0;r<shape.length;r++){
+        for(let c=0;c<shape[0].length;c++){
+          if(!shape[r][c]) continue;
+          const nr = row + r, nc = col + c;
+          if(nc<0||nc>=COLS||nr>=ROWS) return true;
+          if(nr>=0 && grid[nr][nc]) return true;
+        }
+      }
+      return false;
+    },[grid]);
+
+    const drawHud = useCallback(()=>{
+      const canvas = hudRef.current; if(!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle = 'rgba(255,255,255,.06)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1,1,canvas.width-2,canvas.height-2);
+    },[]);
+
+    const updateStatsByClears = useCallback((cleared)=>{
+      if(!cleared) return;
+      setScore(s=>s + [0,100,300,500,800][cleared]);
+      setLines(l=>{
+        const nl = l + cleared;
+        setLevel(1+Math.floor(nl/10));
+        return nl;
+      });
+    },[]);
+
+    const clearLines = useCallback(()=>{
+      setGrid(prev=>{
+        let g = prev.map(r=>r.slice());
+        let cleared = 0;
+        for(let r=ROWS-1;r>=0;r--){
+          if(g[r].every(Boolean)){
+            g.splice(r,1);
+            g.unshift(Array(COLS).fill(0));
+            cleared++;
+            r++;
+          }
+        }
+        if(cleared) updateStatsByClears(cleared);
+        return g;
+      });
+    },[updateStatsByClears]);
+
+    const spawn = useCallback(()=>{
+      setActive(()=>({ ...next, row:-1, col:3 }));
+      setNext(randomPiece());
+      // 게임 오버 체크는 다음 프레임 이동 시 수행
+    },[next]);
+
+    const start = useCallback(()=>{
+      setGrid(Array.from({length:ROWS},()=>Array(COLS).fill(0)));
+      setScore(0); setLevel(1); setLines(0);
+      setRunning(true); setPaused(false); lastRef.current = 0;
+      setNext(randomPiece());
+      setActive(null);
+      requestAnimationFrame(()=>{
+        spawn();
+        drawHud();
+      });
+    },[spawn,drawHud]);
+
+    const togglePause = useCallback(()=>{
+      if(!running) return;
+      setPaused(p=>{
+        const np = !p; toast(np?'일시정지':'재개'); return np;
+      });
+    },[running,toast]);
+
+    const stepDown = useCallback(()=>{
+      setActive(cur=>{
+        if(!cur) return cur;
+        const {shape,row,col,type} = cur;
+        if(!collide(shape,row+1,col)){
+          return { ...cur, row: row+1 };
+        }else{
+          setGrid(prev=>{
+            const g = prev.map(r=>r.slice());
+            for(let r=0;r<shape.length;r++){
+              for(let c=0;c<shape[0].length;c++){
+                if(shape[r][c]) g[row+r][col+c] = type;
+              }
+            }
+            return g;
+          });
+          clearLines();
+          spawn();
+          return null;
+        }
+      });
+    },[collide,clearLines,spawn]);
+
+    const hardDrop = useCallback(()=>{
+      setActive(cur=>{
+        if(!cur) return cur;
+        let {shape,row,col} = cur;
+        while(!collide(shape,row+1,col)) row++;
+        return { ...cur, row };
+      });
+      // 한 번 더 내려 병합
+      requestAnimationFrame(()=>{ stepDown(); toast('하드드롭'); });
+    },[collide,stepDown,toast]);
+
+    const move = useCallback((dx)=>{
+      setActive(cur=>{
+        if(!cur) return cur;
+        const {shape,row,col} = cur;
+        if(!collide(shape,row,col+dx)) return { ...cur, col: col+dx };
+        return cur;
+      });
+    },[collide]);
+
+    const rotateCW = useCallback(()=>{
+      setActive(cur=>{
+        if(!cur) return cur;
+        const s = rotateMatrix(cur.shape);
+        if(!collide(s,cur.row,cur.col)) return { ...cur, shape:s };
+        return cur;
+      });
+    },[collide]);
+
+    useEffect(()=>{
+      drawHud();
+    },[drawHud]);
+
+    useEffect(()=>{
+      if(!running) return;
+      let raf;
+      const loop = (ts)=>{
+        if(!lastRef.current) lastRef.current = ts;
+        if(!paused){
+          const speed = Math.max(100, dropInterval - (level-1)*60);
+          if(ts - lastRef.current > speed){
+            stepDown();
+            lastRef.current = ts;
+          }
+        }
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      return ()=>cancelAnimationFrame(raf);
+    },[running,paused,level,stepDown]);
+
+    useEffect(()=>{
+      const onKey = (e)=>{
+        if(!running||paused) return;
+        switch(e.code){
+          case 'ArrowLeft': move(-1); break;
+          case 'ArrowRight': move(1); break;
+          case 'ArrowDown': stepDown(); break;
+          case 'ArrowUp': rotateCW(); break;
+          case 'Space': e.preventDefault(); hardDrop(); break;
+          case 'KeyP': togglePause(); break;
+        }
+      };
+      document.addEventListener('keydown',onKey);
+      return ()=>document.removeEventListener('keydown',onKey);
+    },[running,paused,move,stepDown,rotateCW,hardDrop,togglePause]);
+
+    // 게임 오버 체크: 스폰 직후 내려갈 수 없는 경우
+    useEffect(()=>{
+      if(!running || !active) return;
+      if(collide(active.shape, active.row+1, active.col)){
+        setRunning(false);
+        toast('게임 오버');
+      }
+    },[running,active,collide,toast]);
+
+    return (
+      <div>
+        <div className="wrap">
+          <div className="panel" style={{position:'relative'}}>
+            <div className="board" aria-label="tetris board" role="application">
+              {mergedGrid.flatMap((row,r)=>row.map((v,c)=>{
+                const filled = Boolean(v);
+                const style = filled ? { background: COLORS[v]||'#2b2f57' } : undefined;
+                return <div key={`${r}-${c}`} className={filled? 'cell filled':'cell'} style={style} />
+              }))}
+            </div>
+            <canvas ref={hudRef} className="hud" width="300" height="600" />
+          </div>
+          <aside className="panel side" aria-label="game info">
+            <div className="hstack">
+              <h1>Tetris</h1>
+              <div className="btns">
+                <button aria-label="start" onClick={start}>시작</button>
+                <button aria-label="pause" onClick={togglePause}>일시정지</button>
+              </div>
+            </div>
+            <div className="stat">
+              <div>점수</div><div className="value">{score}</div>
+              <div>레벨</div><div className="value">{level}</div>
+              <div>라인</div><div className="value">{lines}</div>
+            </div>
+            <div>
+              다음 블록
+              <div className="next" aria-label="next piece">
+                {Array.from({length:4}).map((_,r)=>
+                  Array.from({length:4}).map((_,c)=>{
+                    const on = next && next.shape[r] && next.shape[r][c];
+                    return <div key={`${r}-${c}`} className={on? 'ncell on':'ncell'} />
+                  })
+                )}
+              </div>
+            </div>
+            <div className="controls">
+              ←/→ 이동 · ↑ 회전 · ↓ 소프트드롭 · 스페이스 하드드롭 · P 일시정지
+            </div>
+          </aside>
+        </div>
+
+        <div className={show? 'toast show':'toast'} role="status" aria-live="polite">{msg}</div>
+      </div>
+    );
+  }
+
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+  </script>
+</body>
+</html>
+
