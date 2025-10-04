@@ -1,0 +1,71 @@
+{
+  "compilerOptions": {
+    // 기본 설정
+    "target": "ES2020",                    // 컴파일할 JavaScript 버전
+    "module": "commonjs",                  // 모듈 시스템 (Node.js에서 사용)
+    "lib": ["ES2020"],                     // 사용할 라이브러리
+    
+    // 출력 설정
+    "outDir": "./dist",                    // 컴파일된 파일이 저장될 폴더
+    "rootDir": "./",                       // TypeScript 파일의 루트 폴더
+    "removeComments": false,               // 주석 제거하지 않음 (학습용)
+    
+    // 타입 검사 설정
+    "strict": true,                        // 엄격한 타입 검사 활성화
+    "noImplicitAny": true,                 // 암시적 any 타입 금지
+    "strictNullChecks": true,              // null/undefined 엄격 검사
+    "strictFunctionTypes": true,           // 함수 타입 엄격 검사
+    "noImplicitReturns": true,             // 함수에서 모든 경로가 값을 반환하는지 검사
+    "noFallthroughCasesInSwitch": true,    // switch문에서 fallthrough 케이스 검사
+    "noUncheckedIndexedAccess": true,      // 인덱스 접근 시 undefined 가능성 검사
+    
+    // 모듈 해석 설정
+    "moduleResolution": "node",            // Node.js 모듈 해석 방식
+    "baseUrl": "./",                       // 모듈 해석의 기본 경로
+    "paths": {                             // 경로 별칭 설정
+      "@/*": ["*"],
+      "@/models/*": ["models/*"],
+      "@/routes/*": ["routes/*"],
+      "@/middleware/*": ["middleware/*"],
+      "@/types/*": ["types/*"],
+      "@/utils/*": ["utils/*"]
+    },
+    "esModuleInterop": true,               // ES 모듈과 CommonJS 호환성
+    "allowSyntheticDefaultImports": true,  // 기본 내보내기 허용
+    
+    // 기타 설정
+    "skipLibCheck": true,                  // 라이브러리 타입 검사 건너뛰기 (빌드 속도 향상)
+    "forceConsistentCasingInFileNames": true, // 파일명 대소문자 일관성 검사
+    "resolveJsonModule": true,             // JSON 파일을 모듈로 import 허용
+    "declaration": true,                   // .d.ts 선언 파일 생성
+    "declarationMap": true,                // 선언 파일 소스맵 생성
+    "sourceMap": true,                     // 소스맵 생성 (디버깅용)
+    
+    // 실험적 기능
+    "experimentalDecorators": true,        // 데코레이터 지원
+    "emitDecoratorMetadata": true          // 데코레이터 메타데이터 생성
+  },
+  
+  // 포함할 파일/폴더
+  "include": [
+    "**/*.ts",                            // 모든 .ts 파일
+    "**/*.tsx",                           // 모든 .tsx 파일 (React용)
+    "**/*.json"                           // JSON 파일들
+  ],
+  
+  // 제외할 파일/폴더
+  "exclude": [
+    "node_modules",                       // node_modules 폴더
+    "dist",                               // 빌드 출력 폴더
+    "**/*.test.ts",                       // 테스트 파일들
+    "**/*.spec.ts",                       // 스펙 파일들
+    "coverage",                           // 테스트 커버리지 폴더
+    "uploads"                             // 업로드된 파일 폴더
+  ],
+  
+  // TypeScript 컴파일러 옵션
+  "ts-node": {
+    "esm": false,                         // ESM 모드 비활성화
+    "experimentalSpecifierResolution": "node"
+  }
+}

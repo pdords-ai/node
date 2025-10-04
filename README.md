@@ -1,11 +1,12 @@
-# 🚀 Node.js 종합 학습 프로젝트
+# 🚀 Node.js + React + TypeScript 종합 학습 프로젝트
 
-Node.js에서 가장 많이 사용되는 기술들을 학습할 수 있는 종합적인 프로젝트입니다.
+Node.js 백엔드와 React 프론트엔드를 TypeScript로 구현한 종합적인 학습 프로젝트입니다.
 
 ## 📚 학습 목표
 
 이 프로젝트를 통해 다음 기술들을 학습할 수 있습니다:
 
+### 백엔드 기술
 - **Express.js** - 웹 프레임워크
 - **MongoDB + Mongoose** - NoSQL 데이터베이스
 - **JWT** - 인증 및 보안
@@ -16,10 +17,22 @@ Node.js에서 가장 많이 사용되는 기술들을 학습할 수 있는 종�
 - **CORS** - 크로스 오리진 리소스 공유
 - **Rate Limiting** - API 제한
 
+### 프론트엔드 기술
+- **React** - 사용자 인터페이스 라이브러리
+- **React Router** - 클라이언트 사이드 라우팅
+- **Axios** - HTTP 클라이언트
+- **Socket.io Client** - 실시간 통신 클라이언트
+
+### 공통 기술
+- **TypeScript** - 타입 안전성을 제공하는 JavaScript 확장
+- **Context API** - React 상태 관리
+- **Custom Hooks** - 재사용 가능한 로직
+
 ## 🛠️ 기술 스택
 
 ### 백엔드
 - **Node.js** - JavaScript 런타임
+- **TypeScript** - 타입 안전성
 - **Express.js** - 웹 프레임워크
 - **MongoDB** - NoSQL 데이터베이스
 - **Mongoose** - MongoDB ODM
@@ -27,6 +40,14 @@ Node.js에서 가장 많이 사용되는 기술들을 학습할 수 있는 종�
 - **JWT** - 인증 토큰
 - **Multer** - 파일 업로드
 - **Joi** - 데이터 유효성 검사
+
+### 프론트엔드
+- **React** - UI 라이브러리
+- **TypeScript** - 타입 안전성
+- **React Router** - 라우팅
+- **Axios** - HTTP 클라이언트
+- **Socket.io Client** - 실시간 통신
+- **Context API** - 상태 관리
 
 ### 보안 및 미들웨어
 - **Helmet** - 보안 헤더
@@ -38,33 +59,56 @@ Node.js에서 가장 많이 사용되는 기술들을 학습할 수 있는 종�
 
 ```
 nodejs-learning-project/
-├── server.js                 # 메인 서버 파일
-├── package.json             # 의존성 및 스크립트
+├── server.ts                # 메인 서버 파일 (TypeScript)
+├── package.json             # 백엔드 의존성 및 스크립트
+├── tsconfig.json            # TypeScript 설정
 ├── env.example              # 환경 변수 예시
-├── models/                  # 데이터베이스 모델
-│   ├── User.js              # 사용자 모델
-│   └── Post.js              # 게시물 모델
-├── routes/                  # API 라우트
-│   ├── auth.js              # 인증 라우트
-│   ├── users.js             # 사용자 관리
-│   ├── posts.js             # 게시물 관리
-│   └── upload.js            # 파일 업로드
-├── middleware/              # 미들웨어
-│   └── auth.js              # 인증 미들웨어
+├── types/                   # 타입 정의
+│   └── index.ts             # 공통 타입 정의
+├── models/                  # 데이터베이스 모델 (TypeScript)
+│   ├── User.ts              # 사용자 모델
+│   └── Post.ts              # 게시물 모델
+├── routes/                  # API 라우트 (TypeScript)
+│   ├── auth.ts              # 인증 라우트
+│   ├── users.ts             # 사용자 관리
+│   ├── posts.ts             # 게시물 관리
+│   └── upload.ts            # 파일 업로드
+├── middleware/              # 미들웨어 (TypeScript)
+│   └── auth.ts              # 인증 미들웨어
 ├── socket/                  # Socket.io 핸들러
 │   └── socketHandler.js     # 실시간 통신
-└── uploads/                 # 업로드된 파일 저장소
+├── uploads/                 # 업로드된 파일 저장소
+├── dist/                    # 컴파일된 JavaScript 파일
+└── frontend/                # React 프론트엔드
+    ├── package.json         # 프론트엔드 의존성
+    ├── tsconfig.json        # 프론트엔드 TypeScript 설정
+    ├── public/              # 정적 파일
+    └── src/                 # 소스 코드
+        ├── components/      # React 컴포넌트
+        ├── pages/           # 페이지 컴포넌트
+        ├── contexts/        # React Context
+        ├── services/        # API 서비스
+        ├── types/           # 타입 정의
+        └── App.tsx          # 메인 앱 컴포넌트
 ```
 
 ## 🚀 시작하기
 
-### 1. 의존성 설치
+### 1. 백엔드 의존성 설치
 
 ```bash
 npm install
 ```
 
-### 2. 환경 변수 설정
+### 2. 프론트엔드 의존성 설치
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### 3. 환경 변수 설정
 
 `.env` 파일을 생성하고 다음 내용을 추가하세요:
 
@@ -91,7 +135,7 @@ MAX_FILE_SIZE=5242880
 UPLOAD_PATH=./uploads
 ```
 
-### 3. MongoDB 실행
+### 4. MongoDB 실행
 
 MongoDB가 설치되어 있어야 합니다. 로컬에서 실행하거나 MongoDB Atlas를 사용할 수 있습니다.
 
@@ -103,17 +147,28 @@ mongod
 docker run -d -p 27017:27017 --name mongodb mongo:latest
 ```
 
-### 4. 서버 실행
+### 5. 서버 실행
+
+#### 백엔드 서버 실행
 
 ```bash
-# 개발 모드 (nodemon 사용)
+# 개발 모드 (TypeScript 직접 실행)
 npm run dev
 
-# 프로덕션 모드
+# 프로덕션 모드 (컴파일 후 실행)
+npm run build
 npm start
 ```
 
-서버가 `http://localhost:3000`에서 실행됩니다.
+#### 프론트엔드 서버 실행
+
+```bash
+cd frontend
+npm start
+```
+
+- 백엔드 서버: `http://localhost:3000`
+- 프론트엔드 서버: `http://localhost:3001`
 
 ## 📖 API 문서
 
@@ -455,4 +510,5 @@ pm2 save
 ---
 
 **Happy Coding! 🎉**
+
 
